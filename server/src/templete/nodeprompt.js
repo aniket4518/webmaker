@@ -1,0 +1,2 @@
+"use strict";
+//THIS IS THE PROMT RELATED TO NODE JS
