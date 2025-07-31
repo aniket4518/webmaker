@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsc && nodemon src/index.js"
+    "build": "tsc",
+    "dev": "tsc && nodemon dist/index.js",
+    "start": "node dist/index.js"
   },
   "author": "",
   "license": "ISC",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
-    "@types/node": "^22.13.5"
+    "@types/node": "^22.13.5",
+    "typescript": "^5.8.3"
   }
 }

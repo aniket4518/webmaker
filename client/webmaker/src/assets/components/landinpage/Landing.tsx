@@ -1,31 +1,102 @@
- import Header from "./Header"; // Add this import at the top
+import { useState } from "react";
+import Header from "./Header";
 
-const Landingpage= ()=>{
-
- return (
-    <> 
- <div className="min-h-screen relative overflow-hidden bg-gray-900">
-       {/* Circular radial gradient background */}
-       <div className="absolute inset-0 flex items-center justify-center -z-10">
-         <div className="w-[120vw] h-[120vw] max-w-[1200px] max-h-[1200px] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-700 via-gray-900 to-gray-900 opacity-80"></div>
-       </div>
-       <Header/>
-       <div className="flex flex-col items-center justify-center min-h-[80vh]">
-         <h1 className="text-3xl md:text-5xl font-bold text-center text-white drop-shadow-lg">
-           What do you want to build?
-           <br />
-           <span className="text-lg font-normal text-gray-300">
-             Prompt, run, edit, and deploy full-stack web and mobile apps.
-           </span>
-         </h1>
-         <input
-           type="text"
-           placeholder="Describe your project idea..."
-           className="mt-10 px-6 py-10 rounded-xl border-none shadow-xl bg-gray-800/80 backdrop-blur-md focus:outline-none focus:ring-4 focus:ring-purple-500 w-full max-w-md text-lg text-white placeholder-gray-400 transition"
-         />
-       </div>
-    </div>
-    </>
- )
+interface LandingPageProps {
+  onStartChat: (prompt?: string) => void;
 }
-export default Landingpage
+
+const Landingpage: React.FC<LandingPageProps> = ({ onStartChat }) => {
+  const [prompt, setPrompt] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (prompt.trim()) {
+      onStartChat(prompt.trim());
+    } else {
+      onStartChat();
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
+  return (
+    <div className="min-h-screen relative overflow-hidden bg-gray-900">
+      {/* Circular radial gradient background */}
+      <div className="absolute inset-0 flex items-center justify-center -z-10">
+        <div className="w-[120vw] h-[120vw] max-w-[1200px] max-h-[1200px] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-700 via-gray-900 to-gray-900 opacity-80"></div>
+      </div>
+      
+      <Header onGetStarted={() => onStartChat()} />
+      
+      <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg mb-4">
+            What do you want to build?
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
+            Prompt, run, edit, and deploy full-stack web and mobile apps with AI assistance.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="w-full max-w-2xl">
+          <div className="relative">
+            <input
+              type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Describe your project idea... (e.g., 'Create a todo app with React')"
+              className="w-full px-6 py-4 text-lg rounded-xl border-2 border-gray-700 bg-gray-800/80 backdrop-blur-md focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-white placeholder-gray-400 transition-all duration-300 chat-input"
+              style={{
+                color: '#ffffff',
+                backgroundColor: 'rgba(31, 41, 55, 0.8)'
+              }}
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              Start Building
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-8 text-center">
+          <p className="text-gray-400 mb-4">Or try one of these examples:</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {[
+              "Create a React todo application",
+              "Build a landing page with animations",
+              "Make a simple blog website",
+              "Design a dashboard with charts"
+            ].map((example, index) => (
+              <button
+                key={index}
+                onClick={() => onStartChat(example)}
+                className="px-4 py-2 bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white rounded-lg border border-gray-600 hover:border-gray-500 transition-all duration-300 text-sm"
+              >
+                {example}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-12 text-center">
+          <button
+            onClick={() => onStartChat()}
+            className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold text-lg rounded-xl hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            Get Started Now
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Landingpage;

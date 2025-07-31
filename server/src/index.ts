@@ -2,16 +2,13 @@ import "dotenv/config";
 import express, { Request, Response } from "express";
 import axios from "axios";
 import { generatePrompt } from "./prompt/prompt"; //  
+import { parseCodeResponse } from "./utils/fileParser";
 import cors from "cors";
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));  
 app.use(cors())
-// const mongooose = require("mongoose");
-
-
-// // const mongodb=process.env.MONGODB_URI 
-// mongooose.connect(mongodb)
+ 
 const TOGETHER_AI_API_KEY = process.env.TOGETHER_AI_API_KEY;
 if (!TOGETHER_AI_API_KEY) {
     console.error("Missing Together AI API Key. Add it to your .env file.");
@@ -54,7 +51,15 @@ app.post("/ask-llama", async (req: Request, res: Response) => {
         }
 
         console.log("LLaMA 2 Response:", reply);
-        res.json({ reply });
+        
+        // Parse the response to extract files
+        const files = parseCodeResponse(reply);
+        
+        res.json({ 
+            reply, 
+            files,
+            success: true 
+        });
 
     } catch (error: any) {
         console.error("Error:", error.response?.data || error.message);
