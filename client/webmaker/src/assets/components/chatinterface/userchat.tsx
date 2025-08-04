@@ -202,7 +202,7 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       {/* Main Chat Area */}
-      <div className={`flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-full' : 'w-2/3'}`}>
+      <div className={`flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-full' : 'w-1/2'}`}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
           <div className="flex items-center space-x-3">
@@ -244,7 +244,7 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
           {messages.length === 0 && !initialPrompt && (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4">
-                <span className="text-2xl">🚀</span>
+                <span className="text-2xl"></span>
               </div>
               <h2 className="text-2xl font-bold mb-2 text-white">Welcome to WebMaker AI</h2>
               <p className="text-gray-400 max-w-md">
@@ -308,7 +308,7 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
 
       {/* Sidebar */}
       {!sidebarCollapsed && (
-        <div className="w-1/3 border-l border-gray-700 bg-gray-800 flex flex-col">
+        <div className="w-1/2 border-l border-gray-700 bg-gray-800 flex flex-col">
           {/* Sidebar Header */}
           <div className="flex border-b border-gray-700">
             <button
@@ -341,7 +341,7 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
           </div>
 
           {/* Sidebar Content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-2 overflow-hidden">
             {activeTab === 'files' && (
               <div className="h-full flex flex-col">
                 {files.length > 0 && <FileActions files={files} />}
@@ -356,7 +356,7 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
                         />
                       </div>
                       {selectedFile && (
-                        <div className="w-1/2">
+                        <div className="w-3/2">
                           <CodeViewer file={selectedFile} />
                         </div>
                       )}

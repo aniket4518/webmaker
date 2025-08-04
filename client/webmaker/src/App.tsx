@@ -1,5 +1,5 @@
 import { useState } from "react";
-import UserChat from "./assets/components/chatinterface/userchat";
+import UserChat from "./assets/components/chatinterface/userchat.tsx";
 import Landingpage from "./assets/components/landinpage/Landing";
 
 function App() {

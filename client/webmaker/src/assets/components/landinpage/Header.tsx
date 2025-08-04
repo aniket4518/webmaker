@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ onGetStarted }) => {
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center">
           <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-            <span className="text-white font-bold text-sm">W</span>
+            <span className="text-white font-bold text-sm"></span>
           </div>
           <span className="text-2xl font-bold text-white">WebMaker AI</span>
         </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Header from "./Header";
+import Header from "./Header.tsx";
 
 interface LandingPageProps {
   onStartChat: (prompt?: string) => void;
@@ -28,12 +28,12 @@ const Landingpage: React.FC<LandingPageProps> = ({ onStartChat }) => {
     <div className="min-h-screen relative overflow-hidden bg-gray-900">
       {/* Circular radial gradient background */}
       <div className="absolute inset-0 flex items-center justify-center -z-10">
-        <div className="w-[120vw] h-[120vw] max-w-[1200px] max-h-[1200px] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-700 via-gray-900 to-gray-900 opacity-80"></div>
+        <div className="w-[100vw] h-[100vw] max-w-[1200px] max-h-[1200px] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-700 via-gray-900 to-gray-900 opacity-80"></div>
       </div>
       
       <Header onGetStarted={() => onStartChat()} />
       
-      <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
+      <div className="flex flex-col items-center justify-center min-h-[110vh] px-4">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg mb-4">
             What do you want to build?
