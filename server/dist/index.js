@@ -22,13 +22,13 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cors_1.default)());
-const TOGETHER_AI_API_KEY = process.env.TOGETHER_AI_API_KEY;
-if (!TOGETHER_AI_API_KEY) {
-    console.error("Missing Together AI API Key. Add it to your .env file.");
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+    console.error("Missing Gemini API Key. Add it to your .env file.");
     process.exit(1);
 }
 app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f, _g;
     try {
         console.log("Request Body:", req.body); // Log the request body
         const userPrompt = req.body.userPrompt;
@@ -38,24 +38,30 @@ app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function*
         console.log("User Prompt:", userPrompt);
         const aiPrompt = (0, prompt_1.generatePrompt)(userPrompt);
         console.log("Generated AI Prompt:", aiPrompt);
-        const response = yield axios_1.default.post("https://api.together.xyz/v1/chat/completions", {
-            model: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-            messages: [{ role: "user", content: aiPrompt }],
-            max_tokens: 3000
+        const response = yield axios_1.default.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            contents: [{
+                    parts: [{
+                            text: aiPrompt
+                        }]
+                }],
+            generationConfig: {
+                maxOutputTokens: 10000,
+                temperature: 1
+            }
         }, {
             headers: {
-                Authorization: `Bearer ${TOGETHER_AI_API_KEY}`,
                 "Content-Type": "application/json",
             },
         });
         console.log("Full Response:", response.data);
-        const reply = (_c = (_b = (_a = response.data.choices) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.message) === null || _c === void 0 ? void 0 : _c.content;
+        const reply = (_e = (_d = (_c = (_b = (_a = response.data.candidates) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.text;
         if (!reply) {
             throw new Error("Invalid response structure");
         }
-        console.log("LLaMA 2 Response:", reply);
+        console.log("Gemini Response:", reply);
         // Parse the response to extract files
         const files = (0, fileParser_1.parseCodeResponse)(reply);
+        console.log("Parsed files:", files.length, files.map(f => f.name));
         res.json({
             reply,
             files,
@@ -63,8 +69,8 @@ app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function*
         });
     }
     catch (error) {
-        console.error("Error:", ((_d = error.response) === null || _d === void 0 ? void 0 : _d.data) || error.message);
-        res.status(500).json({ error: ((_e = error.response) === null || _e === void 0 ? void 0 : _e.data) || error.message });
+        console.error("Error:", ((_f = error.response) === null || _f === void 0 ? void 0 : _f.data) || error.message);
+        res.status(500).json({ error: ((_g = error.response) === null || _g === void 0 ? void 0 : _g.data) || error.message });
     }
 }));
 app.listen(5000, () => {

@@ -46,12 +46,11 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Handle initial prompt when component mounts
+ 
   useEffect(() => {
     if (initialPrompt && initialPrompt.trim()) {
       setUserInput(initialPrompt);
-      // Auto-send the initial prompt after a short delay
+    
       setTimeout(() => {
         handleSendInitial(initialPrompt);
       }, 500);
@@ -80,6 +79,11 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
       });
       const data = await res.json();
       
+      console.log("Backend response (initial):", data); // Debug log
+      console.log("Files received (initial):", data.files); // Debug log
+      console.log("Files array length (initial):", data.files ? data.files.length : 0); // Debug log
+      console.log("Files details (initial):", data.files ? data.files.map((f: any) => ({ name: f.name, path: f.path, contentLength: f.content ? f.content.length : 0 })) : []); // Debug log
+      
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -91,11 +95,14 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
       setMessages([userMessage, assistantMessage]);
       
       if (data.files && data.files.length > 0) {
+        console.log("Setting files (initial):", data.files); // Debug log
         setFiles(data.files);
         const firstFile = findFirstFile(data.files);
         if (firstFile) {
           setSelectedFile(firstFile);
         }
+      } else {
+        console.log("No files received or empty files array (initial)"); // Debug log
       }
     } catch (err) {
       const errorMessage: ChatMessage = {
@@ -131,6 +138,11 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
       });
       const data = await res.json();
       
+      console.log("Backend response:", data); // Debug log
+      console.log("Files received:", data.files); // Debug log
+      console.log("Files array length:", data.files ? data.files.length : 0); // Debug log
+      console.log("Files details:", data.files ? data.files.map((f: any) => ({ name: f.name, path: f.path, contentLength: f.content ? f.content.length : 0 })) : []); // Debug log
+      
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -142,11 +154,14 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
       setMessages(prev => [...prev, assistantMessage]);
       
       if (data.files && data.files.length > 0) {
+        console.log("Setting files:", data.files); // Debug log
         setFiles(data.files);
         const firstFile = findFirstFile(data.files);
         if (firstFile) {
           setSelectedFile(firstFile);
         }
+      } else {
+        console.log("No files received or empty files array"); // Debug log
       }
     } catch (err) {
       const errorMessage: ChatMessage = {
@@ -179,11 +194,10 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
       handleSend();
     }
   };
-
+//download file
   const downloadAllFiles = () => {
     if (files.length === 0) return;
     
-    // Create a zip-like structure by downloading each file
     files.forEach(file => {
       if (file.type === 'file') {
         const blob = new Blob([file.content], { type: 'text/plain' });

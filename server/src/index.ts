@@ -9,9 +9,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));  
 app.use(cors())
  
-const TOGETHER_AI_API_KEY = process.env.TOGETHER_AI_API_KEY;
-if (!TOGETHER_AI_API_KEY) {
-    console.error("Missing Together AI API Key. Add it to your .env file.");
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+    console.error("Missing Gemini API Key. Add it to your .env file.");
     process.exit(1);
 }
 
@@ -29,15 +29,21 @@ app.post("/ask-llama", async (req: Request, res: Response) => {
         console.log("Generated AI Prompt:", aiPrompt); 
 
         const response = await axios.post(
-            "https://api.together.xyz/v1/chat/completions",
+           
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
             {
-                model: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-                messages: [{ role: "user", content: aiPrompt }],
-                max_tokens: 3000
+                contents: [{
+                    parts: [{
+                        text: aiPrompt
+                    }]
+                }],
+                generationConfig: {
+                    maxOutputTokens: 10000,
+                    temperature: 1
+                }
             },
             {
                 headers: {
-                    Authorization: `Bearer ${TOGETHER_AI_API_KEY}`,
                     "Content-Type": "application/json",
                 },
             }
@@ -45,15 +51,16 @@ app.post("/ask-llama", async (req: Request, res: Response) => {
 
         console.log("Full Response:", response.data);  
 
-        const reply = response.data.choices?.[0]?.message?.content;
+        const reply = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!reply) {
             throw new Error("Invalid response structure");
         }
 
-        console.log("LLaMA 2 Response:", reply);
+        console.log("Gemini Response:", reply);
         
         // Parse the response to extract files
         const files = parseCodeResponse(reply);
+        console.log("Parsed files:", files.length, files.map(f => f.name));
         
         res.json({ 
             reply, 
