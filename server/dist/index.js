@@ -28,17 +28,25 @@ if (!GEMINI_API_KEY) {
     process.exit(1);
 }
 app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e;
     try {
-        console.log("Request Body:", req.body); // Log the request body
+        console.log("=== /ask-llama endpoint called ===");
+        console.log("Request Body:", req.body);
         const userPrompt = req.body.userPrompt;
         if (!userPrompt) {
-            throw new Error("Missing user prompt in request body");
+            console.error("Missing userPrompt in request body");
+            res.status(400).json({ error: "Missing userPrompt in request body" });
+            return;
         }
         console.log("User Prompt:", userPrompt);
+        console.log("Generating AI prompt...");
         const aiPrompt = (0, prompt_1.generatePrompt)(userPrompt);
-        console.log("Generated AI Prompt:", aiPrompt);
-        const response = yield axios_1.default.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        console.log("Generated AI Prompt length:", aiPrompt.length);
+        console.log("AI Prompt preview:", aiPrompt.substring(0, 200) + "...");
+        console.log("Making request to Gemini API...");
+        console.log("API Key exists:", !!GEMINI_API_KEY);
+        console.log("API Key length:", (GEMINI_API_KEY === null || GEMINI_API_KEY === void 0 ? void 0 : GEMINI_API_KEY.length) || 0);
+        const response = yield axios_1.default.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
             contents: [{
                     parts: [{
                             text: aiPrompt
@@ -52,16 +60,22 @@ app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function*
             headers: {
                 "Content-Type": "application/json",
             },
+            timeout: 30000 // 30 second timeout
         });
-        console.log("Full Response:", response.data);
+        console.log("Gemini API response status:", response.status);
+        console.log("Gemini API response data structure:", Object.keys(response.data));
         const reply = (_e = (_d = (_c = (_b = (_a = response.data.candidates) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.text;
         if (!reply) {
-            throw new Error("Invalid response structure");
+            console.error("Invalid response structure from Gemini");
+            console.error("Response data:", JSON.stringify(response.data, null, 2));
+            throw new Error("Invalid response structure from Gemini API");
         }
-        console.log("Gemini Response:", reply);
-        // Parse the response to extract files
+        console.log("Gemini Response length:", reply.length);
+        console.log("Reply preview:", reply.substring(0, 200) + "...");
+        console.log("Parsing response for files...");
         const files = (0, fileParser_1.parseCodeResponse)(reply);
-        console.log("Parsed files:", files.length, files.map(f => f.name));
+        console.log("Parsed files count:", files.length);
+        console.log("File names:", files.map(f => f.name));
         res.json({
             reply,
             files,
@@ -69,8 +83,33 @@ app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function*
         });
     }
     catch (error) {
-        console.error("Error:", ((_f = error.response) === null || _f === void 0 ? void 0 : _f.data) || error.message);
-        res.status(500).json({ error: ((_g = error.response) === null || _g === void 0 ? void 0 : _g.data) || error.message });
+        console.error("=== ERROR in /ask-llama ===");
+        console.error("Error type:", error.constructor.name);
+        console.error("Error message:", error.message);
+        if (error.response) {
+            console.error("API Error status:", error.response.status);
+            console.error("API Error data:", error.response.data);
+            res.status(500).json({
+                error: `API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`,
+                success: false
+            });
+        }
+        else if (error.request) {
+            console.error("Network Error - no response received");
+            console.error("Request config:", error.config);
+            res.status(500).json({
+                error: "Network error - could not reach Gemini API",
+                success: false
+            });
+        }
+        else {
+            console.error("General Error:", error.message);
+            console.error("Stack trace:", error.stack);
+            res.status(500).json({
+                error: error.message,
+                success: false
+            });
+        }
     }
 }));
 app.listen(5000, () => {

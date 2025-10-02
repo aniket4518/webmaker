@@ -13,12 +13,12 @@ export function parseCodeResponse(response: string): FileStructure[] {
   console.log("Response length:", response.length);
   console.log("First 1000 chars:", response.substring(0, 1000));
   
-   
-  const geminiFormatRegex = /```(\w+)?\n\/\/\s*([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\n([\s\S]*?)\n```/gi;
+  // Strategy 1: File path before code block (the format in our prompt)
+  const pathBeforeCodeRegex = /^([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\s*\n```(\w+)?\n([\s\S]*?)\n```/gim;
   
   let match;
-  while ((match = geminiFormatRegex.exec(response)) !== null) {
-    const [fullMatch, language, filePath, extension, content] = match;
+  while ((match = pathBeforeCodeRegex.exec(response)) !== null) {
+    const [fullMatch, filePath, extension, language, content] = match;
     if (content && content.trim()) {
       const fileName = filePath.split('/').pop() || filePath;
       const file: FileStructure = {
@@ -28,16 +28,16 @@ export function parseCodeResponse(response: string): FileStructure[] {
         type: 'file'
       };
       files.push(file);
-      console.log(`Strategy 1 (Gemini format) - Found file: ${filePath} (${content.trim().length} chars)`);
+      console.log(`Strategy 1 (Path before code) - Found file: ${filePath} (${content.trim().length} chars)`);
     }
   }
   
-  
+  // Strategy 2: Comment inside code block (Gemini format)
   if (files.length === 0) {
-    const originalFormatRegex = /^([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\s*\n```(\w+)?\n([\s\S]*?)\n```/gim;
+    const geminiFormatRegex = /```(\w+)?\n\/\/\s*([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\n([\s\S]*?)\n```/gi;
     
-    while ((match = originalFormatRegex.exec(response)) !== null) {
-      const [fullMatch, filePath, extension, language, content] = match;
+    while ((match = geminiFormatRegex.exec(response)) !== null) {
+      const [fullMatch, language, filePath, extension, content] = match;
       if (content && content.trim()) {
         const fileName = filePath.split('/').pop() || filePath;
         const file: FileStructure = {
@@ -47,12 +47,12 @@ export function parseCodeResponse(response: string): FileStructure[] {
           type: 'file'
         };
         files.push(file);
-        console.log(`Strategy 2 (Original format) - Found file: ${filePath} (${content.trim().length} chars)`);
+        console.log(`Strategy 2 (Gemini format) - Found file: ${filePath} (${content.trim().length} chars)`);
       }
     }
   }
   
- 
+  // Strategy 3: HTML comment format
   if (files.length === 0) {
     const htmlCommentFormatRegex = /```(\w+)?\n<!--\s*([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\s*-->\n([\s\S]*?)\n```/gi;
     
@@ -72,7 +72,7 @@ export function parseCodeResponse(response: string): FileStructure[] {
     }
   }
   
- 
+  // Strategy 4: CSS comment format
   if (files.length === 0) {
     const cssCommentFormatRegex = /```(\w+)?\n\/\*\s*([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\s*\*\/\n([\s\S]*?)\n```/gi;
     
@@ -91,7 +91,7 @@ export function parseCodeResponse(response: string): FileStructure[] {
       }
     }
   }
- 
+  // Strategy 5: Markdown comment format
   if (files.length === 0) {
     const markdownCommentFormatRegex = /```(\w+)?\n#\s*([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\n([\s\S]*?)\n```/gi;
     
@@ -110,7 +110,8 @@ export function parseCodeResponse(response: string): FileStructure[] {
       }
     }
   }
- 
+  
+  // Strategy 6: Fallback - any code blocks
   if (files.length === 0) {
     console.log("Strategy 6 - Fallback: Looking for any code blocks...");
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)\n```/g;

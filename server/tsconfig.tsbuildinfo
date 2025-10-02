@@ -1,1 +1,1 @@
-{"root":["./src/index.ts"],"version":"5.7.3"}
+{"root":["./src/index.ts","./src/prompt.ts","./src/prompt/prompt.ts","./src/routes/userroutes.ts","./src/templete/nodeprompt.ts","./src/templete/reactpromt.ts","./src/utils/fileparser.ts"],"version":"5.8.3"}
