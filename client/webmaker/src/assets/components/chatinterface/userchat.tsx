@@ -131,7 +131,7 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
     setUserInput("");
     
     try {
-      const res = await fetch("http://localhost:5000/ask-llama", {
+      const res = await fetch("https://webmaker-5ej8.onrender.com/ask-llama", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userPrompt: userInput }),
