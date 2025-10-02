@@ -72,10 +72,10 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
     setUserInput("");
     
     try {
-      const res = await fetch("http://localhost:5000/ask-llama", {
+      const res = await fetch("http://localhost:5000/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userPrompt: prompt }),
+        body: JSON.stringify({ prompt: prompt }),
       });
       const data = await res.json();
       
@@ -87,7 +87,7 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.reply || data.error || "No response",
+        content: data.message || data.error || "No response",
         timestamp: new Date(),
         files: data.files || []
       };
@@ -131,10 +131,10 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
     setUserInput("");
     
     try {
-      const res = await fetch("http://localhost:5000/ask-llama", {
+      const res = await fetch("http://localhost:5000/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userPrompt: userInput }),
+        body: JSON.stringify({ prompt: userInput }),
       });
       const data = await res.json();
       
@@ -146,7 +146,7 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.reply || data.error || "No response",
+        content: data.message || data.error || "No response",
         timestamp: new Date(),
         files: data.files || []
       };
