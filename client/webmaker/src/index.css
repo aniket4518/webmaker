@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Global styles for bolt.new-like appearance */
+ 
 * {
   box-sizing: border-box;
 }
@@ -21,8 +21,7 @@ html, body {
 #root {
   height: 100%;
 }
-
-/* Custom scrollbar for dark theme */
+ 
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -40,8 +39,7 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: #9CA3AF;
 }
-
-/* Prism.js theme overrides for better dark theme */
+ 
 pre[class*="language-"] {
   background: #111827 !important;
   border: none !important;
@@ -50,8 +48,7 @@ pre[class*="language-"] {
 code[class*="language-"] {
   background: #111827 !important;
 }
-
-/* Ensure text visibility and contrast */
+ 
 .text-gray-100 {
   color: #f3f4f6 !important;
 }
@@ -64,7 +61,7 @@ code[class*="language-"] {
   color: #ffffff !important;
 }
 
-/* Message content specific styling */
+ 
 .message-content {
   line-height: 1.6;
 }
@@ -76,8 +73,7 @@ code[class*="language-"] {
 .message-content p:last-child {
   margin-bottom: 0;
 }
-
-/* Force proper text visibility for message elements */
+ 
 .message-bubble.user-message {
   color: #ffffff;
 }
