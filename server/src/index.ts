@@ -55,7 +55,7 @@ app.post("/ask-llama", async (req: Request, res: Response): Promise<void> => {
             ],
             model: "llama-3.3-70b-versatile",
             temperature: 1,
-            max_completion_tokens: 8000,
+            max_tokens: 8000,
             top_p: 1,
             stream: false
         });
