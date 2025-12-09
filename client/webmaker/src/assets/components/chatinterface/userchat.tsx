@@ -36,6 +36,7 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
   const [loading, setLoading] = useState<boolean>(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'files' | 'preview' | 'terminal'>('files');
+  const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -72,17 +73,38 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
     setUserInput("");
     
     try {
-      const res = await fetch("https://webmaker-5ej8.onrender.com/ask-llama", {
+      const res = await fetch("https://webmaker-backend.onrender.com/ask-llama", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userPrompt: prompt }),
       });
+      
       const data = await res.json();
       
-      console.log("Backend response (initial):", data); // Debug log
-      console.log("Files received (initial):", data.files); // Debug log
-      console.log("Files array length (initial):", data.files ? data.files.length : 0); // Debug log
-      console.log("Files details (initial):", data.files ? data.files.map((f: any) => ({ name: f.name, path: f.path, contentLength: f.content ? f.content.length : 0 })) : []); // Debug log
+      if (!res.ok) {
+        // Handle 429 quota error specifically
+        if (res.status === 429 && data.quota_exceeded) {
+          const retryAfterMs = (data.retry_after || 60) * 1000;
+          setRetryAfter(Date.now() + retryAfterMs);
+          
+          const errorContent = `⚠️ **API Quota Exceeded**\n\nThe Gemini API free tier limit has been reached.\n\n**What happened:**\n• Free tier allows limited requests per minute/day\n• Your quota has been exhausted\n\n**Solutions:**\n1. Wait ${data.retry_after} seconds and try again\n2. Get a new API key from https://ai.google.dev\n3. Upgrade to a paid plan for higher limits\n\nThe app will be ready to use again in ${data.retry_after} seconds.`;
+          
+          const errorMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: errorContent,
+            timestamp: new Date()
+          };
+          setMessages([userMessage, errorMessage]);
+          setLoading(false);
+          return;
+        }
+        
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      
+      console.log("Backend response (initial):", data);
+      console.log("Files received (initial):", data.files);
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -95,20 +117,22 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
       setMessages([userMessage, assistantMessage]);
       
       if (data.files && data.files.length > 0) {
-        console.log("Setting files (initial):", data.files); // Debug log
+        console.log("Setting files (initial):", data.files);
         setFiles(data.files);
         const firstFile = findFirstFile(data.files);
         if (firstFile) {
           setSelectedFile(firstFile);
         }
-      } else {
-        console.log("No files received or empty files array (initial)"); // Debug log
       }
-    } catch (err) {
+      
+      setRetryAfter(null);
+    } catch (err: any) {
+      console.error("Error:", err);
+      
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "Error contacting backend",
+        content: `❌ **Error**\n\n${err.message}\n\nPlease try again or check your connection.`,
         timestamp: new Date()
       };
       setMessages([userMessage, errorMessage]);
@@ -118,6 +142,19 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
 
   const handleSend = async () => {
     if (!userInput.trim()) return;
+    
+    // Check if we're still in retry cooldown
+    if (retryAfter && Date.now() < retryAfter) {
+      const waitSeconds = Math.ceil((retryAfter - Date.now()) / 1000);
+      const warningMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `⏱️ **Please Wait**\n\nYou need to wait **${waitSeconds} more seconds** before sending another request due to API rate limits.\n\nThis cooldown is automatically applied after quota errors.`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, warningMessage]);
+      return;
+    }
     
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -131,17 +168,38 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
     setUserInput("");
     
     try {
-      const res = await fetch("https://webmaker-5ej8.onrender.com/ask-llama", {
+      const res = await fetch("https://webmaker-backend.onrender.com/ask-llama", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userPrompt: userInput }),
       });
+      
       const data = await res.json();
       
-      console.log("Backend response:", data); // Debug log
-      console.log("Files received:", data.files); // Debug log
-      console.log("Files array length:", data.files ? data.files.length : 0); // Debug log
-      console.log("Files details:", data.files ? data.files.map((f: any) => ({ name: f.name, path: f.path, contentLength: f.content ? f.content.length : 0 })) : []); // Debug log
+      if (!res.ok) {
+        // Handle 429 quota error specifically
+        if (res.status === 429 && data.quota_exceeded) {
+          const retryAfterMs = (data.retry_after || 60) * 1000;
+          setRetryAfter(Date.now() + retryAfterMs);
+          
+          const errorContent = `⚠️ **API Quota Exceeded**\n\nThe Gemini API free tier limit has been reached.\n\n**What happened:**\n• Free tier allows limited requests per minute/day\n• Your quota has been exhausted\n\n**Solutions:**\n1. Wait ${data.retry_after} seconds and try again\n2. Get a new API key from https://ai.google.dev\n3. Upgrade to a paid plan for higher limits\n\nThe app will be ready to use again in ${data.retry_after} seconds.`;
+          
+          const errorMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: errorContent,
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, errorMessage]);
+          setLoading(false);
+          return;
+        }
+        
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      
+      console.log("Backend response:", data);
+      console.log("Files received:", data.files);
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -154,20 +212,22 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
       setMessages(prev => [...prev, assistantMessage]);
       
       if (data.files && data.files.length > 0) {
-        console.log("Setting files:", data.files); // Debug log
+        console.log("Setting files:", data.files);
         setFiles(data.files);
         const firstFile = findFirstFile(data.files);
         if (firstFile) {
           setSelectedFile(firstFile);
         }
-      } else {
-        console.log("No files received or empty files array"); // Debug log
       }
-    } catch (err) {
+      
+      setRetryAfter(null);
+    } catch (err: any) {
+      console.error("Error:", err);
+      
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "Error contacting backend",
+        content: `**Error**\n\n${err.message}\n\nPlease try again or check your connection.`,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -292,6 +352,14 @@ const UserChat: React.FC<UserChatProps> = ({ initialPrompt, onBackToLanding }) =
 
         {/* Input Area */}
         <div className="p-4 border-t border-gray-700 bg-gray-800">
+          {retryAfter && Date.now() < retryAfter && (
+            <div className="mb-3 p-3 bg-yellow-900/30 border border-yellow-600/50 rounded-lg text-sm text-yellow-200">
+              <div className="flex items-center space-x-2">
+                <span>⏱️</span>
+                <span>Rate limit active. Please wait {Math.ceil((retryAfter - Date.now()) / 1000)}s before sending another message.</span>
+              </div>
+            </div>
+          )}
           <div className="flex items-end space-x-3">
             <div className="flex-1 relative">
               <textarea

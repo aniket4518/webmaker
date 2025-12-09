@@ -14,21 +14,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
-const axios_1 = __importDefault(require("axios"));
-const prompt_1 = require("./prompt/prompt"); //  
+const groq_sdk_1 = __importDefault(require("groq-sdk"));
+const prompt_1 = require("./prompt/prompt");
 const fileParser_1 = require("./utils/fileParser");
 const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
-app.use((0, cors_1.default)());
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-    console.error("Missing Gemini API Key. Add it to your .env file.");
+// Configure CORS for localhost:5173
+app.use((0, cors_1.default)({
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+if (!GROQ_API_KEY) {
+    console.error("Missing Groq API Key. Add it to your .env file.");
     process.exit(1);
 }
+const groq = new groq_sdk_1.default({ apiKey: GROQ_API_KEY });
 app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e;
+    var _a, _b;
     try {
         console.log("=== /ask-llama endpoint called ===");
         console.log("Request Body:", req.body);
@@ -42,35 +49,27 @@ app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function*
         console.log("Generating AI prompt...");
         const aiPrompt = (0, prompt_1.generatePrompt)(userPrompt);
         console.log("Generated AI Prompt length:", aiPrompt.length);
-        console.log("AI Prompt preview:", aiPrompt.substring(0, 200) + "...");
-        console.log("Making request to Gemini API...");
-        console.log("API Key exists:", !!GEMINI_API_KEY);
-        console.log("API Key length:", (GEMINI_API_KEY === null || GEMINI_API_KEY === void 0 ? void 0 : GEMINI_API_KEY.length) || 0);
-        const response = yield axios_1.default.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
-            contents: [{
-                    parts: [{
-                            text: aiPrompt
-                        }]
-                }],
-            generationConfig: {
-                maxOutputTokens: 10000,
-                temperature: 1
-            }
-        }, {
-            headers: {
-                "Content-Type": "application/json",
-            },
-            timeout: 30000 // 30 second timeout
+        console.log("Making request to Groq API...");
+        const chatCompletion = yield groq.chat.completions.create({
+            messages: [
+                {
+                    role: "user",
+                    content: aiPrompt
+                }
+            ],
+            model: "llama-3.3-70b-versatile",
+            temperature: 1,
+            max_completion_tokens: 8000,
+            top_p: 1,
+            stream: false
         });
-        console.log("Gemini API response status:", response.status);
-        console.log("Gemini API response data structure:", Object.keys(response.data));
-        const reply = (_e = (_d = (_c = (_b = (_a = response.data.candidates) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.text;
+        console.log("Groq API response received");
+        const reply = (_b = (_a = chatCompletion.choices[0]) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.content;
         if (!reply) {
-            console.error("Invalid response structure from Gemini");
-            console.error("Response data:", JSON.stringify(response.data, null, 2));
-            throw new Error("Invalid response structure from Gemini API");
+            console.error("Invalid response from Groq");
+            throw new Error("Invalid response from Groq API");
         }
-        console.log("Gemini Response length:", reply.length);
+        console.log("Groq Response length:", reply.length);
         console.log("Reply preview:", reply.substring(0, 200) + "...");
         console.log("Parsing response for files...");
         const files = (0, fileParser_1.parseCodeResponse)(reply);
@@ -86,19 +85,12 @@ app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function*
         console.error("=== ERROR in /ask-llama ===");
         console.error("Error type:", error.constructor.name);
         console.error("Error message:", error.message);
-        if (error.response) {
-            console.error("API Error status:", error.response.status);
-            console.error("API Error data:", error.response.data);
-            res.status(500).json({
-                error: `API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`,
-                success: false
-            });
-        }
-        else if (error.request) {
-            console.error("Network Error - no response received");
-            console.error("Request config:", error.config);
-            res.status(500).json({
-                error: "Network error - could not reach Gemini API",
+        if (error.status === 429) {
+            res.status(429).json({
+                error: "API quota exceeded. Please wait before trying again.",
+                quota_exceeded: true,
+                retry_after: 60,
+                message: "You've exceeded the free tier quota for Groq API.",
                 success: false
             });
         }
@@ -114,4 +106,5 @@ app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function*
 }));
 app.listen(5000, () => {
     console.log("Server is running on port 5000");
+    console.log("Groq API Key configured:", GROQ_API_KEY ? "Yes" : "No");
 });

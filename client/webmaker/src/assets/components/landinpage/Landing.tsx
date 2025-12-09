@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Send } from "lucide-react";
 import Header from "./Header.tsx";
 
 interface LandingPageProps {
@@ -54,14 +55,15 @@ const Landingpage: React.FC<LandingPageProps> = ({ onStartChat }) => {
               className="w-full px-6 py-4 text-lg rounded-xl border-2 border-gray-700 bg-gray-800/80 backdrop-blur-md focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-white placeholder-gray-400 transition-all duration-300 chat-input"
               style={{
                 color: '#ffffff',
-                backgroundColor: 'rgba(31, 41, 55, 0.8)'
+                backgroundColor: 'rgba(31, 41, 55, 0.67)'
               }}
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center space-x-1.5"
             >
-              Start Building
+              <Send size={18} />
+              <span>build now</span>
             </button>
           </div>
         </form>

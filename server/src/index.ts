@@ -1,23 +1,29 @@
 import "dotenv/config";
 import express, { Request, Response } from "express";
-import axios from "axios";
-import { generatePrompt } from "./prompt/prompt"; //  
+import Groq from "groq-sdk";
+import { generatePrompt } from "./prompt/prompt";
 import { parseCodeResponse } from "./utils/fileParser";
 import cors from "cors";
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));  
-app.use(cors())
 
- 
+// Configure CORS for localhost:5173
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173','https://webmaker-nine.vercel.app/'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
- 
- 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-    console.error("Missing Gemini API Key. Add it to your .env file.");
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+if (!GROQ_API_KEY) {
+    console.error("Missing Groq API Key. Add it to your .env file.");
     process.exit(1);
 }
+
+const groq = new Groq({ apiKey: GROQ_API_KEY });
 
 app.post("/ask-llama", async (req: Request, res: Response): Promise<void> => {
     try {
@@ -37,46 +43,33 @@ app.post("/ask-llama", async (req: Request, res: Response): Promise<void> => {
         
         const aiPrompt = generatePrompt(userPrompt);  
         console.log("Generated AI Prompt length:", aiPrompt.length);
-        console.log("AI Prompt preview:", aiPrompt.substring(0, 200) + "...");
 
-        console.log("Making request to Gemini API...");
-        console.log("API Key exists:", !!GEMINI_API_KEY);
-        console.log("API Key length:", GEMINI_API_KEY?.length || 0);
+        console.log("Making request to Groq API...");
 
-        const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-            {
-                contents: [{
-                    parts: [{
-                        text: aiPrompt
-                    }]
-                }],
-                generationConfig: {
-                    maxOutputTokens: 10000,
-                    temperature: 1
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "user",
+                    content: aiPrompt
                 }
-            },
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                timeout: 30000 // 30 second timeout
-            }
-        );
+            ],
+            model: "llama-3.3-70b-versatile",
+            temperature: 1,
+            max_completion_tokens: 8000,
+            top_p: 1,
+            stream: false
+        });
 
-        console.log("Gemini API response status:", response.status);
-        console.log("Gemini API response data structure:", Object.keys(response.data));
+        console.log("Groq API response received");
 
-        const reply = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const reply = chatCompletion.choices[0]?.message?.content;
         if (!reply) {
-            console.error("Invalid response structure from Gemini");
-            console.error("Response data:", JSON.stringify(response.data, null, 2));
-            throw new Error("Invalid response structure from Gemini API");
+            console.error("Invalid response from Groq");
+            throw new Error("Invalid response from Groq API");
         }
 
-        console.log("Gemini Response length:", reply.length);
+        console.log("Groq Response length:", reply.length);
         console.log("Reply preview:", reply.substring(0, 200) + "...");
-        
         
         console.log("Parsing response for files...");
         const files = parseCodeResponse(reply);
@@ -94,23 +87,18 @@ app.post("/ask-llama", async (req: Request, res: Response): Promise<void> => {
         console.error("Error type:", error.constructor.name);
         console.error("Error message:", error.message);
         
-        if (error.response) {
-            console.error("API Error status:", error.response.status);
-            console.error("API Error data:", error.response.data);
-            res.status(500).json({ 
-                error: `API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`,
-                success: false 
-            });
-        } else if (error.request) {
-            console.error("Network Error - no response received");
-            console.error("Request config:", error.config);
-            res.status(500).json({ 
-                error: "Network error - could not reach Gemini API",
+        if (error.status === 429) {
+            res.status(429).json({ 
+                error: "API quota exceeded. Please wait before trying again.",
+                quota_exceeded: true,
+                retry_after: 60,
+                message: "You've exceeded the free tier quota for Groq API.",
                 success: false 
             });
         } else {
             console.error("General Error:", error.message);
             console.error("Stack trace:", error.stack);
+            
             res.status(500).json({ 
                 error: error.message,
                 success: false 
@@ -121,4 +109,5 @@ app.post("/ask-llama", async (req: Request, res: Response): Promise<void> => {
 
 app.listen(5000, () => {
     console.log("Server is running on port 5000");
+    console.log("Groq API Key configured:", GROQ_API_KEY ? "Yes" : "No");
 });
