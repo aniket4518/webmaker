@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));  
 
-// Configure CORS for localhost:5173
+ 
 app.use(cors({
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173','https://webmaker-nine.vercel.app/'],
     credentials: true,
