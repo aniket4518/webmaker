@@ -13,7 +13,6 @@ export function parseCodeResponse(response: string): FileStructure[] {
   console.log("Response length:", response.length);
   console.log("First 1000 chars:", response.substring(0, 1000));
   
-  // Strategy 1: File path before code block (the format in our prompt)
   const pathBeforeCodeRegex = /^([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\s*\n```(\w+)?\n([\s\S]*?)\n```/gim;
   
   let match;
@@ -30,9 +29,7 @@ export function parseCodeResponse(response: string): FileStructure[] {
       files.push(file);
       console.log(`Strategy 1 (Path before code) - Found file: ${filePath} (${content.trim().length} chars)`);
     }
-  }
-  
-  // Strategy 2: Comment inside code block (Gemini format)
+  } 
   if (files.length === 0) {
     const geminiFormatRegex = /```(\w+)?\n\/\/\s*([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\n([\s\S]*?)\n```/gi;
     
@@ -50,9 +47,7 @@ export function parseCodeResponse(response: string): FileStructure[] {
         console.log(`Strategy 2 (Gemini format) - Found file: ${filePath} (${content.trim().length} chars)`);
       }
     }
-  }
-  
-  // Strategy 3: HTML comment format
+  } 
   if (files.length === 0) {
     const htmlCommentFormatRegex = /```(\w+)?\n<!--\s*([a-zA-Z0-9_\-\/\.]+\.(jsx?|tsx?|css|html|json|md|js|ts|py|java|cpp|c|php|rb|go|rs|swift|kt|scala|sh|yml|yaml|xml|sql|env|gitignore|txt))\s*-->\n([\s\S]*?)\n```/gi;
     
