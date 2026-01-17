@@ -5,14 +5,22 @@ import { generatePrompt } from "./prompt/prompt";
 import { parseCodeResponse } from "./utils/fileParser";
 import cors from "cors";
 
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://webmaker-nine.vercel.app");
+  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));  
-
  
-app.options("*", cors());
-
-
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 if (!GROQ_API_KEY) {
     console.error("Missing Groq API Key. Add it to your .env file.");
