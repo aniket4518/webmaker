@@ -19,15 +19,9 @@ const prompt_1 = require("./prompt/prompt");
 const fileParser_1 = require("./utils/fileParser");
 const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
+app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
-// Configure CORS for localhost:5173
-app.use((0, cors_1.default)({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 if (!GROQ_API_KEY) {
     console.error("Missing Groq API Key. Add it to your .env file.");
@@ -59,7 +53,7 @@ app.post("/ask-llama", (req, res) => __awaiter(void 0, void 0, void 0, function*
             ],
             model: "llama-3.3-70b-versatile",
             temperature: 1,
-            max_completion_tokens: 8000,
+            max_tokens: 8000,
             top_p: 1,
             stream: false
         });
