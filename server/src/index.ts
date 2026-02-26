@@ -4,13 +4,13 @@ import Groq from "groq-sdk";
 import { generatePrompt } from "./prompt/prompt";
 import { parseCodeResponse } from "./utils/fileParser";
 import cors from "cors";
- 
+
 const app = express();
- app.use(cors());
+app.use(cors());
 app.use(express.json());
- 
-app.use(express.urlencoded({ extended: true }));  
- 
+
+app.use(express.urlencoded({ extended: true }));
+
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 if (!GROQ_API_KEY) {
     console.error("Missing Groq API Key. Add it to your .env file.");
@@ -34,8 +34,8 @@ app.post("/ask-llama", async (req: Request, res: Response): Promise<void> => {
 
         console.log("User Prompt:", userPrompt);
         console.log("Generating AI prompt...");
-        
-        const aiPrompt = generatePrompt(userPrompt);  
+
+        const aiPrompt = generatePrompt(userPrompt);
         console.log("Generated AI Prompt length:", aiPrompt.length);
 
         console.log("Making request to Groq API...");
@@ -49,7 +49,7 @@ app.post("/ask-llama", async (req: Request, res: Response): Promise<void> => {
             ],
             model: "llama-3.3-70b-versatile",
             temperature: 1,
-            max_tokens: 8000,
+            max_tokens: 32768,
             top_p: 1,
             stream: false
         });
@@ -64,38 +64,38 @@ app.post("/ask-llama", async (req: Request, res: Response): Promise<void> => {
 
         console.log("Groq Response length:", reply.length);
         console.log("Reply preview:", reply.substring(0, 200) + "...");
-        
+
         console.log("Parsing response for files...");
         const files = parseCodeResponse(reply);
         console.log("Parsed files count:", files.length);
         console.log("File names:", files.map(f => f.name));
-        
-        res.json({ 
-            reply, 
+
+        res.json({
+            reply,
             files,
-            success: true 
+            success: true
         });
 
     } catch (error: any) {
         console.error("=== ERROR in /ask-llama ===");
         console.error("Error type:", error.constructor.name);
         console.error("Error message:", error.message);
-        
+
         if (error.status === 429) {
-            res.status(429).json({ 
+            res.status(429).json({
                 error: "API quota exceeded. Please wait before trying again.",
                 quota_exceeded: true,
                 retry_after: 60,
                 message: "You've exceeded the free tier quota for Groq API.",
-                success: false 
+                success: false
             });
         } else {
             console.error("General Error:", error.message);
             console.error("Stack trace:", error.stack);
-            
-            res.status(500).json({ 
+
+            res.status(500).json({
                 error: error.message,
-                success: false 
+                success: false
             });
         }
     }

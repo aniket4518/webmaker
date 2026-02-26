@@ -1,4 +1,4 @@
- import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Play, Square, RefreshCw, ExternalLink } from 'lucide-react';
 
 interface FileStructure {
@@ -72,26 +72,26 @@ const Preview: React.FC<PreviewProps> = ({ files }) => {
   const generateReactPreview = (): string | null => {
     console.log('Generating React preview...');
     console.log('Frontend files:', projectStructure.frontendFiles.map(f => f.name));
-    
+
     // Find the main App component
     const appFile = projectStructure.frontendFiles.find(f =>
       f.name === 'App.jsx' || f.name === 'App.tsx' || f.name === 'App.js'
     );
-    
+
     // Find CSS files
-    const cssFiles = projectStructure.frontendFiles.filter(f => 
+    const cssFiles = projectStructure.frontendFiles.filter(f =>
       f.name.endsWith('.css')
     );
-    
+
     // Find main.jsx file for additional imports
     const mainFile = projectStructure.frontendFiles.find(f =>
       f.name === 'main.jsx' || f.name === 'main.tsx' || f.name === 'index.jsx'
     );
-    
+
     console.log('Found App file:', appFile?.name);
     console.log('Found CSS files:', cssFiles.map(f => f.name));
     console.log('Found main file:', mainFile?.name);
-    
+
     if (!appFile) {
       console.log('No App file found');
       return null;
@@ -99,26 +99,32 @@ const Preview: React.FC<PreviewProps> = ({ files }) => {
 
     // Clean the React code
     let cleanedAppCode = appFile.content;
-    
+
+    // Extract lucide-react imports before removing all imports
+    const lucideImportsMatch = cleanedAppCode.match(/import\s+{([^}]+)}\s+from\s+['"]lucide-react['"]/);
+    const lucideIcons = lucideImportsMatch
+      ? lucideImportsMatch[1].split(',').map(i => i.trim()).filter(Boolean)
+      : [];
+
     // Remove imports that we can't resolve
     cleanedAppCode = cleanedAppCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
     cleanedAppCode = cleanedAppCode.replace(/import\s+['"].*?['"];?\s*/g, '');
-    
+
     // Remove exports
     cleanedAppCode = cleanedAppCode.replace(/export\s+default\s+/, '');
     cleanedAppCode = cleanedAppCode.replace(/export\s+/, '');
-    
+
     // Handle common React patterns
     cleanedAppCode = cleanedAppCode.replace(/useState/g, 'React.useState');
     cleanedAppCode = cleanedAppCode.replace(/useEffect/g, 'React.useEffect');
     cleanedAppCode = cleanedAppCode.replace(/useCallback/g, 'React.useCallback');
     cleanedAppCode = cleanedAppCode.replace(/useMemo/g, 'React.useMemo');
     cleanedAppCode = cleanedAppCode.replace(/useRef/g, 'React.useRef');
-    
+
     // Replace common dependencies
     cleanedAppCode = cleanedAppCode.replace(/nanoid\(\)/g, 'Date.now().toString()');
     cleanedAppCode = cleanedAppCode.replace(/uuid\(\)/g, 'Date.now().toString()');
-    
+
     console.log('Cleaned App code preview:', cleanedAppCode.substring(0, 300) + '...');
 
     // Combine all CSS content
@@ -131,9 +137,17 @@ const Preview: React.FC<PreviewProps> = ({ files }) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>React Preview</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
       /* Reset and base styles */
       * {
@@ -393,10 +407,52 @@ const Preview: React.FC<PreviewProps> = ({ files }) => {
         };
       }
       
+      // Create React components for all Lucide icons used
+      const iconNames = ${JSON.stringify(lucideIcons)};
+      iconNames.forEach(iconName => {
+        // Lucide uses PascalCase for React components, but we can access them from the window.lucide object
+        // if they exist. e.g. window.lucide.Menu
+        if (window.lucide && window.lucide[iconName]) {
+          window[iconName] = function(props) {
+            const iconNode = window.lucide[iconName];
+            
+            // To render a Lucide icon in React from its raw node definition:
+            // We need to map its attributes and children to React elements
+            const svgProps = {
+              xmlns: 'http://www.w3.org/2000/svg',
+              width: props.size || 24,
+              height: props.size || 24,
+              viewBox: '0 0 24 24',
+              fill: 'none',
+              stroke: props.color || 'currentColor',
+              strokeWidth: props.strokeWidth || 2,
+              strokeLinecap: 'round',
+              strokeLinejoin: 'round',
+              className: props.className || '',
+              ...props
+            };
+            
+            // Reconstruct the SVG based on the lucide.createElement function logic roughly
+            return React.createElement('svg', svgProps, 
+              // Create paths/lines/circles based on the icon definition
+              iconNode[2].map((child, i) => {
+                const [tag, attrs] = child;
+                return React.createElement(tag, { ...attrs, key: i });
+              })
+            );
+          };
+        } else {
+          // Fallback if icon isn't found
+            window[iconName] = function() {
+              return React.createElement('span', null, '[' + iconName + ']');
+            };
+        }
+      });
+      
       // App component from generated code
       ${cleanedAppCode}
       
-      // Render the app
+      // Render the app and initialize icons
       try {
         const container = document.getElementById('root');
         if (container) {
