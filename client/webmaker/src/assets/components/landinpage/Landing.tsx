@@ -52,7 +52,7 @@ const Landingpage: React.FC<LandingPageProps> = ({ onStartChat }) => {
               onChange={(e) => setPrompt(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Describe your project idea... (e.g., 'Create a todo app with React')"
-              className="w-full px-6 py-4 text-lg rounded-xl border-2 border-gray-700 bg-gray-800/80 backdrop-blur-md focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-white placeholder-gray-400 transition-all duration-300 chat-input"
+              className="w-full px-6 py-4 text-s rounded-xl border-2 border-gray-700 bg-gray-800/80 backdrop-blur-md focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-white placeholder-gray-400 transition-all duration-300 chat-input"
               style={{
                 color: '#ffffff',
                 backgroundColor: 'rgba(31, 41, 55, 0.67)'
